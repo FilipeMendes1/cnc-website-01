@@ -74,9 +74,9 @@ export default function App() {
         {/* 1) Galeria / Hero */}
         <section id="galeria" className="py-12 md:py-16">
 
-          <div className="mt-10">
+
             <GaleriaScroll/>
-          </div>
+
         </section>
 
         {/* 2) Serviços */}

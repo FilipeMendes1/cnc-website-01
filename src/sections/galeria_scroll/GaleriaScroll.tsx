@@ -2,18 +2,12 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "../../components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-/**
- * Galeria CNC (sem fotos reais)
- * - Carousel com card central + “peek” dos laterais (desktop)
- * - Mobile: 1 card por vez, swipe
- * - Cards usam placeholders “metal” gerados em SVG (data URI)
- */
-
 type WorkItem = {
   id: string;
   title: string;
   tags: string[];
   notes?: string;
+  image: string;
 };
 
 function svgToDataUri(svg: string) {
@@ -24,7 +18,6 @@ function svgToDataUri(svg: string) {
 }
 
 function metalPlaceholder(seed: number) {
-  // Placeholder “metal” com linhas técnicas + brilho suave
   const s = (seed % 7) + 1;
   const svg = `
   <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900">
@@ -92,44 +85,36 @@ function mod(n: number, m: number) {
 }
 
 export default function GaleriaScroll() {
-  const items: WorkItem[] = useMemo(
-    () => [
-      {
-        id: "w1",
-        title: "Suporte em Alumínio 6082",
-        tags: ["3 eixos", "±0.02 mm", "Rebarbação"],
-        notes: "Peça de fixação para montagem e alinhamento.",
-      },
-      {
-        id: "w2",
-        title: "Flange em Aço C45",
-        tags: ["Torneamento", "Roscas", "Tratamento"],
-        notes: "Geometrias concêntricas e controlo dimensional.",
-      },
-      {
-        id: "w3",
-        title: "Placa em Inox 304",
-        tags: ["Furação", "Chanfros", "Acabamento"],
-        notes: "Detalhes repetíveis para séries curtas.",
-      },
-      {
-        id: "w4",
-        title: "Eixo com Rasgo de Chaveta",
-        tags: ["Torneamento", "Rasgo", "Inspeção"],
-        notes: "Boa repetibilidade e tolerâncias consistentes.",
-      },
-      {
-        id: "w5",
-        title: "Peça 5 Eixos (Complexa)",
-        tags: ["5 eixos", "Fixação", "Contorno"],
-        notes: "Redução de setups e melhor concentricidade.",
-      },
-    ],
-    []
-  );
+
+  const galleryImages = Object.entries(
+    import.meta.glob("../../assets/editar/imagens_galeria/*.{png,jpg,jpeg,webp,avif}", {
+      eager: true,
+      import: "default",
+    })
+  )
+  .sort(([a], [b]) => a.localeCompare(b))
+  .map(([, mod]) => mod as string);
+  
+  const toTitle = (path: string) => {
+    const file = path.split("/").pop() ?? "Projeto";
+    const name = file.replace(/\.[^/.]+$/, "").replace(/[-_]+/g, " ").trim();
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  };
+
+  const items: WorkItem[] = useMemo(() => {
+    return galleryImages.map((img, i) => ({
+      id: `img-${i + 1}`,
+      title: toTitle(img),
+      tags: ["CNC", "Precisão", "Acabamento"], // podes trocar depois
+      notes: "Peça maquinada com foco em repetibilidade e controlo dimensional.",
+      image: img,
+    }));
+  }, [galleryImages]);
 
   const [index, setIndex] = useState(0);
+  
   const count = items.length;
+  if (count === 0) return null;
 
   const prev = () => setIndex((i) => mod(i - 1, count));
   const next = () => setIndex((i) => mod(i + 1, count));
@@ -171,16 +156,15 @@ export default function GaleriaScroll() {
   const right = items[mod(index + 1, count)];
 
   return (
-    <section id="galeria" className="relative w-full py-14 md:py-20">
+    <section id="galeria" className="relative w-full">
       <div className="mx-auto max-w-7xl px-4">
         <div className="flex items-end justify-between gap-6">
           <div>
             <h2 className="text-2xl md:text-3xl font-semibold tracking-tight">
-              Galeria de Trabalhos
+              Projetos
             </h2>
             <p className="mt-2 text-sm md:text-base text-muted-foreground max-w-2xl">
-              Exemplos ilustrativos (sem fotos reais). Quando tiveres imagens, é só
-              trocar os placeholders pelo teu conteúdo.
+              Peças maquinadas em diferentes materiais, com tolerâncias apertadas e acabamentos consistentes.
             </p>
           </div>
 
@@ -215,20 +199,20 @@ export default function GaleriaScroll() {
             <div className="relative h-[520px]">
               <GalleryCard
                 item={left}
-                image={metalPlaceholder(index - 1)}
-                className="absolute left-0 top-10 w-[36%] -rotate-[2deg] scale-[0.95] opacity-70"
+                image={left.image}
+                className="absolute left-0 top-10 w-[36%] -rotate-[2deg] scale-[0.95] opacity-70 z-10"
                 onClick={prev}
               />
               <GalleryCard
                 item={center}
-                image={metalPlaceholder(index)}
-                className="absolute left-1/2 top-0 w-[44%] -translate-x-1/2 scale-100 opacity-100"
+                image={center.image}
+                className="absolute left-1/2 top-0 w-[44%] -translate-x-1/2 scale-100 opacity-100 z-30"
                 highlight
               />
               <GalleryCard
                 item={right}
-                image={metalPlaceholder(index + 1)}
-                className="absolute right-0 top-10 w-[36%] rotate-[2deg] scale-[0.95] opacity-70"
+                image={right.image}
+                className="absolute right-0 top-10 w-[36%] rotate-[2deg] scale-[0.95] opacity-70 z-20"
                 onClick={next}
               />
             </div>
@@ -238,7 +222,7 @@ export default function GaleriaScroll() {
           <div className="md:hidden">
             <GalleryCard
               item={center}
-              image={metalPlaceholder(index)}
+              image={center.image}
               className="w-full"
               highlight
             />
@@ -267,7 +251,7 @@ export default function GaleriaScroll() {
           </div>
 
           {/* Dots */}
-          <div className="mt-8 flex justify-center gap-2">
+          <div className=" flex justify-center gap-2">
             {items.map((_, i) => (
               <button
                 key={i}
@@ -329,7 +313,7 @@ function GalleryCard({
         {/* Dark overlay for legibility */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/10" />
 
-        {/* Top chips */}
+        {/* Top chips
         <div className="absolute left-4 right-4 top-4 flex flex-wrap gap-2">
           {item.tags.slice(0, 3).map((t) => (
             <span
@@ -339,7 +323,7 @@ function GalleryCard({
               {t}
             </span>
           ))}
-        </div>
+        </div> */}
 
         {/* CTA hint */}
         {!!onClick && (
@@ -350,7 +334,7 @@ function GalleryCard({
       </div>
 
       {/* Text */}
-      <div className="p-5">
+      {/* <div className="p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="text-base font-semibold">{item.title}</div>
@@ -369,7 +353,7 @@ function GalleryCard({
             </div>
           ) : null}
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }
